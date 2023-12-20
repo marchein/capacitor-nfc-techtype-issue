@@ -1,0 +1,40 @@
+PODS:
+  - Capacitor (5.6.0):
+    - CapacitorCordova
+  - CapacitorBrowser (5.1.0):
+    - Capacitor
+  - CapacitorCordova (5.6.0)
+  - CapacitorSplashScreen (5.0.6):
+    - Capacitor
+  - CapawesomeTeamCapacitorNfc (5.0.2):
+    - Capacitor
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorBrowser (from `../../node_modules/@capacitor/browser`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
+  - "CapawesomeTeamCapacitorNfc (from `../../node_modules/@capawesome-team/capacitor-nfc`)"
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorBrowser:
+    :path: "../../node_modules/@capacitor/browser"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorSplashScreen:
+    :path: "../../node_modules/@capacitor/splash-screen"
+  CapawesomeTeamCapacitorNfc:
+    :path: "../../node_modules/@capawesome-team/capacitor-nfc"
+
+SPEC CHECKSUMS:
+  Capacitor: ebfc16cdb8116d04c101686b080342872da42d43
+  CapacitorBrowser: 7a0fb6a1011abfaaf2dfedfd8248f942a8eda3d6
+  CapacitorCordova: 931b48fcdbc9bc985fc2f16cec9f77c794a27729
+  CapacitorSplashScreen: 5fa2ab5e46cf5cc530cf16a51c80c7a986579ccd
+  CapawesomeTeamCapacitorNfc: 25ea112c93fca2d7078c71fe86592daed542dd49
+
+PODFILE CHECKSUM: f298f1ef898d7681451242f1f1dc835bef1869a3
+
+COCOAPODS: 1.14.3
