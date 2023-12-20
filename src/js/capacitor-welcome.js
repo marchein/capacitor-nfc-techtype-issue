@@ -68,7 +68,7 @@ window.customElements.define(
       console.log("Select App Command Hex:", this.hexEncodedString(Array.from(selectAppCommand)));
 
 
-      await this.sendNfcRequest(nfcTag, selectAppCommand, NfcTagTechType.Ndef).then(async (response) => {
+      await this.sendNfcRequest(nfcTag, selectAppCommand, NfcTagTechType.MifareDesfire).then(async (response) => {
         console.log("Response:", response);
         console.log("Response Hex:", this.hexEncodedString(Array.from(response)));
         console.log("Response Int:", this.bytesToInt(Array.from(response)));
@@ -76,7 +76,7 @@ window.customElements.define(
         console.log("--------------- Send Command Read Value --------------- ");
         let readValueCommand = 0x6c;
         let readValueRequest = this.compileNfcRequest(readValueCommand, [0x01]);
-        await this.sendNfcRequest(nfcTag, readValueRequest, NfcTagTechType.Ndef).then(async (response) => {
+        await this.sendNfcRequest(nfcTag, readValueRequest, NfcTagTechType.MifareDesfire).then(async (response) => {
           console.log("Response:", response);
           console.log("Response Hex:", this.hexEncodedString(Array.from(response)));
           console.log("Response Int:", this.bytesToInt(Array.from(response)));

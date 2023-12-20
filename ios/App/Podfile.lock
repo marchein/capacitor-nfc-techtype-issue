@@ -6,7 +6,7 @@ PODS:
   - CapacitorCordova (5.6.0)
   - CapacitorSplashScreen (5.0.6):
     - Capacitor
-  - CapawesomeTeamCapacitorNfc (5.0.2):
+  - CapawesomeTeamCapacitorNfc (5.0.2-dev.61fde2a.1703067017):
     - Capacitor
 
 DEPENDENCIES:
@@ -33,7 +33,7 @@ SPEC CHECKSUMS:
   CapacitorBrowser: 7a0fb6a1011abfaaf2dfedfd8248f942a8eda3d6
   CapacitorCordova: 931b48fcdbc9bc985fc2f16cec9f77c794a27729
   CapacitorSplashScreen: 5fa2ab5e46cf5cc530cf16a51c80c7a986579ccd
-  CapawesomeTeamCapacitorNfc: 25ea112c93fca2d7078c71fe86592daed542dd49
+  CapawesomeTeamCapacitorNfc: 58abfe00c9972bde02558cacc07d833ef0651f05
 
 PODFILE CHECKSUM: f298f1ef898d7681451242f1f1dc835bef1869a3
 

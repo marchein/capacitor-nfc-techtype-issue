@@ -17,7 +17,7 @@
     "@capacitor/core": "latest",
     "@capacitor/ios": "^5.6.0",
     "@capacitor/splash-screen": "latest",
-    "@capawesome-team/capacitor-nfc": "^5.0.2"
+    "@capawesome-team/capacitor-nfc": "^5.0.2-dev.61fde2a.1703067017"
   },
   "devDependencies": {
     "@capacitor/cli": "latest",
