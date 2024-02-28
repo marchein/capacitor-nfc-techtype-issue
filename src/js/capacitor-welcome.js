@@ -1,5 +1,5 @@
-import { SplashScreen } from "@capacitor/splash-screen";
-import { Nfc, NfcTagTechType } from '@capawesome-team/capacitor-nfc';
+import { SplashScreen } from '@capacitor/splash-screen';
+import { Nfc, NfcTagTechType, PollingOption } from '@capawesome-team/capacitor-nfc';
 
 window.customElements.define(
   "capacitor-welcome",
@@ -13,10 +13,6 @@ window.customElements.define(
       root.innerHTML = `
     <main>
       <h1 style="margin-top: 64px;">Capacitor NFC Issue</h1>
-      <p>
-        This project is used to create a minimal, reproducible example. Just add
-        the affected Capacitor platforms and plugins.
-      </p>
       <button id="scan-card">Scan Card</button>
     </main>
     `;
@@ -25,79 +21,53 @@ window.customElements.define(
     async scanCard(nfcTag) {
       console.log("--------------- Output Card Info ---------------");
       console.log(nfcTag);
-      console.log("ATQA:", nfcTag.atqa);
-      console.log("Application Data:", nfcTag.applicationData);
-      console.log("Barcode:", nfcTag.barcode);
-      console.log("Can Make Read-Only:", nfcTag.canMakeReadOnly);
-      console.log("DSF ID:", nfcTag.dsfId);
-      console.log("Hi Layer Response:", nfcTag.hiLayerResponse);
-      console.log("Historical Bytes:", nfcTag.historicalBytes);
-      console.log("ID:", nfcTag.id);
-      console.log("Is Writable:", nfcTag.isWritable);
-      console.log("Manufacturer:", nfcTag.manufacturer);
-      console.log("Max Size:", nfcTag.maxSize);
-      console.log("Message:", nfcTag.message);
-      console.log("Protocol Info:", nfcTag.protocolInfo);
-      console.log("Response Flags:", nfcTag.responseFlags);
-      console.log("SAK:", nfcTag.sak);
-      console.log("System Code:", nfcTag.systemCode);
-      console.log("Tech Types:", nfcTag.techTypes);
-      console.log("Type:", nfcTag.type);
-      console.log("--------------- Output Card Info END ---------------");
 
-      if (nfcTag.id == undefined) {
-        return;
-      }
-      console.log("--------------- Card Identifier ---------------");
-      let id = this.getCardIdentifier(nfcTag.id);
-      let hexId = this.hexEncodedString(nfcTag.id);
-      console.log("ID:", id);
-      console.log("Hex ID:", hexId);
-      console.log("--------------- Card Identifier END ---------------");
+      if (nfcTag.id !== undefined) {
+        let id = this.getCardIdentifier(nfcTag.id);
+        let hexId = this.hexEncodedString(nfcTag.id);
+        console.log("ID:", id);
+        console.log("Hex ID:", hexId);
+    
+        // 1st command : select app
+        let appId = 0x5F8415;
+        // Create a byte array from the app ID
+        let appIdByteArray = this.intToBytes(appId);
+        console.log("App ID:", appIdByteArray);
+        console.log("App ID Bytes:", appIdByteArray);
+        // select app
+        let selectAppCommand = this.compileNfcRequest(0x5a, appIdByteArray);
+    
+        await this.sendNfcRequest(nfcTag, selectAppCommand, NfcTagTechType.Iso7816).then(async (response) => {
+          let readValueCommand = 0x6c;
+          let readValueRequest = this.compileNfcRequest(readValueCommand, [0x01]);
+          console.log("Read Value Command:", readValueCommand);
+          console.log("Read Value Request:", readValueRequest);
 
-      console.log("--------------- Send Command Select App --------------- ");
-      // 1st command : select app
-      let appId = 0x5F8415;
-      // Create a byte array from the app ID
-      let appIdByteArray = this.intToBytes(appId);
-      console.log("App ID:", appIdByteArray);
-      console.log("App ID Bytes:", appIdByteArray);
-      // select app
-      let selectAppCommand = this.compileNfcRequest(0x5a, appIdByteArray);
-      console.log("Select App Command:", selectAppCommand);
-      console.log("Select App Command Hex:", this.hexEncodedString(Array.from(selectAppCommand)));
-
-
-      await this.sendNfcRequest(nfcTag, selectAppCommand, NfcTagTechType.MifareDesfire).then(async (response) => {
-        console.log("Response:", response);
-        console.log("Response Hex:", this.hexEncodedString(Array.from(response)));
-        console.log("Response Int:", this.bytesToInt(Array.from(response)));
-
-        console.log("--------------- Send Command Read Value --------------- ");
-        let readValueCommand = 0x6c;
-        let readValueRequest = this.compileNfcRequest(readValueCommand, [0x01]);
-        await this.sendNfcRequest(nfcTag, readValueRequest, NfcTagTechType.MifareDesfire).then(async (response) => {
-          console.log("Response:", response);
-          console.log("Response Hex:", this.hexEncodedString(Array.from(response)));
-          console.log("Response Int:", this.bytesToInt(Array.from(response)));
-
-          console.log("--------------- Send Command Read Value END --------------- ");
+          await this.sendNfcRequest(nfcTag, readValueRequest, NfcTagTechType.Iso7816).then(async (response) => {
+            Nfc.stopScanSession();
+    
+            let trimmedData = Array.from(response);
+            trimmedData.pop();
+            trimmedData.pop();
+            trimmedData.reverse();
+            let currentBalanceRaw = this.bytesToInt(trimmedData);
+            let currentBalanceValue = this.intToEuro(currentBalanceRaw);
+            this.lastCredit = currentBalanceValue;
+            console.log("currentBalanceValue:", currentBalanceValue);
+          });
         });
-        console.log("--------------- Send Command Select App END --------------- ");
-      });
-    }
+      }
+    }    
 
     // Send an NFC request to the tag
     async sendNfcRequest(tag, request, techType) {
       console.log("-------------------- Send NFC Request --------------------");
       console.log("Tag:", tag);
-      console.log("techType:", techType);
       console.log("Request:", request);
-      console.log("Request Hex:", this.hexEncodedString(Array.from(request)));
-      console.log("Request Int:", this.bytesToInt(Array.from(request)));
-      console.log("Request Bytes:", Array.from(request));
+      console.log("techType:", techType);
   
       const dataAsNumberArray = Array.from(request);
+      
       try {
         const transceiveResult = await Nfc.transceive({
           techType: techType,
@@ -108,7 +78,6 @@ window.customElements.define(
         // Extract the 'response' property from TransceiveResult
         const response = transceiveResult.response || [];
         console.log("Request response:", response);
-        console.log("-------------------- Send NFC Request END --------------------");
         return new Uint8Array(response);
   
       } catch (error) {
@@ -162,11 +131,12 @@ window.customElements.define(
       const read = async () => {
         return new Promise((resolve) => {
           Nfc.addListener('nfcTagScanned', async (event) => {
-            await Nfc.stopScanSession();
             resolve(event.nfcTag);
           });
       
-          Nfc.startScanSession();
+          Nfc.startScanSession({
+            pollingOptions: [PollingOption.iso14443]
+          });
         });
       };
 
