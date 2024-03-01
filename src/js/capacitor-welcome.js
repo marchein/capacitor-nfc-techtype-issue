@@ -1,4 +1,6 @@
+import { Capacitor } from '@capacitor/core';
 import { SplashScreen } from '@capacitor/splash-screen';
+import { NfcUtils } from '@capawesome-team/capacitor-nfc';
 import { Nfc, NfcTagTechType, PollingOption } from '@capawesome-team/capacitor-nfc';
 
 window.customElements.define(
@@ -19,49 +21,57 @@ window.customElements.define(
     }
 
     async scanCard(nfcTag) {
-      console.log("--------------- Output Card Info ---------------");
-      console.log(nfcTag);
-
       if (nfcTag.id !== undefined) {
         let id = this.getCardIdentifier(nfcTag.id);
         let hexId = this.hexEncodedString(nfcTag.id);
         console.log("ID:", id);
         console.log("Hex ID:", hexId);
-    
-        // 1st command : select app
-        let appId = 0x5F8415;
-        // Create a byte array from the app ID
-        let appIdByteArray = this.intToBytes(appId);
-        console.log("App ID:", appIdByteArray);
-        console.log("App ID Bytes:", appIdByteArray);
-        // select app
-        let selectAppCommand = this.compileNfcRequest(0x5a, appIdByteArray);
-    
-        await this.sendNfcRequest(nfcTag, selectAppCommand, NfcTagTechType.Iso7816).then(async (response) => {
-          let readValueCommand = 0x6c;
-          let readValueRequest = this.compileNfcRequest(readValueCommand, [0x01]);
-          console.log("Read Value Command:", readValueCommand);
-          console.log("Read Value Request:", readValueRequest);
 
-          await this.sendNfcRequest(nfcTag, readValueRequest, NfcTagTechType.Iso7816).then(async (response) => {
-            Nfc.stopScanSession();
-    
-            let trimmedData = Array.from(response);
-            trimmedData.pop();
-            trimmedData.pop();
-            trimmedData.reverse();
-            let currentBalanceRaw = this.bytesToInt(trimmedData);
-            let currentBalanceValue = this.intToEuro(currentBalanceRaw);
-            this.lastCredit = currentBalanceValue;
-            console.log("currentBalanceValue:", currentBalanceValue);
+        var readValueRequest = new Uint8Array();
+        const techType = Capacitor.getPlatform() === 'ios' ? NfcTagTechType.Iso7816 : NfcTagTechType.IsoDep;
+
+        if (Capacitor.getPlatform() === 'ios') {
+          let appId = 0x5F8415;
+          let appIdByteArray = this.intToBytes(appId);
+          let selectAppCommand = this.compileNfcRequest(0x5a, appIdByteArray);
+          await this.sendNfcRequest(nfcTag, selectAppCommand, techType);
+
+          let readValueCommand = 0x6c;
+          readValueRequest = this.compileNfcRequest(readValueCommand, [0x01]);
+        } else {
+          const nfcUtils = new NfcUtils();
+
+          let selectAppCommand = nfcUtils.convertHexToBytes({
+            hex: '0x905A0000035F841500'
+          }).bytes;      
+          await Nfc.connect({
+            techType
           });
-        });
+          await this.sendNfcRequest(nfcTag, selectAppCommand, techType);
+          readValueRequest = nfcUtils.convertHexToBytes({
+            hex: '0x906C0000010100'
+          }).bytes;
+        }
+  
+        const readValueResponse = await this.sendNfcRequest(nfcTag, readValueRequest, techType);
+        if (Capacitor.getPlatform() === 'android') {
+          Nfc.close();
+        }
+        Nfc.stopScanSession();
+
+        let trimmedData = Array.from(readValueResponse);
+        trimmedData.pop();
+        trimmedData.pop();
+        trimmedData.reverse();
+        let currentBalanceRaw = this.bytesToInt(trimmedData);
+        let currentBalanceValue = this.intToEuro(currentBalanceRaw);
+
+        console.log("currentBalanceValue:", currentBalanceValue);
       }
     }    
 
     // Send an NFC request to the tag
     async sendNfcRequest(tag, request, techType) {
-      console.log("-------------------- Send NFC Request --------------------");
       console.log("Tag:", tag);
       console.log("Request:", request);
       console.log("techType:", techType);
@@ -73,11 +83,9 @@ window.customElements.define(
           techType: techType,
           data: dataAsNumberArray
         });
-        console.log("Transceive Result:", transceiveResult);
       
         // Extract the 'response' property from TransceiveResult
         const response = transceiveResult.response || [];
-        console.log("Request response:", response);
         return new Uint8Array(response);
   
       } catch (error) {
@@ -99,6 +107,10 @@ window.customElements.define(
     // Convert an integer to bytes
     intToBytes(value) {
       return [(value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF];
+    }
+
+    intToEuro(value) {
+      return +(value / 1000).toFixed(2);
     }
 
     // Compile an NFC request command
@@ -140,13 +152,10 @@ window.customElements.define(
         });
       };
 
-      self.shadowRoot
-        .querySelector("#scan-card")
-        .addEventListener("click", async function (event) {
-          read().then(async (nfcTag) => {
-            await self.scanCard(nfcTag);
-          });
-        });
+      self.shadowRoot.querySelector("#scan-card").addEventListener("click", async function () {
+        const nfcTag = await read();
+        await self.scanCard(nfcTag);
+      });
     }
   },
 );
